@@ -55,3 +55,25 @@ def bench_unionfind_chain_large(): chain(8000);
 def bench_unionfind_groups_small(): len(ds::unionfind::groups(ds::unionfind::new(2000)));
 
 def bench_unionfind_groups_large(): len(ds::unionfind::groups(ds::unionfind::new(8000)));
+
+def scan(repeats):
+  var t = ds::trie::new()
+  | var w = 0
+  | let _ = while (w < 40):
+      t = ds::trie::insert(t, "term" + to_string(w) + "x")
+      | w = w + 1
+    end
+  | let text = repeat("lorem term7x ipsum dolor term13x sit amet ", repeats)
+  | let m = len(text)
+  | var i = 0
+  | var hits = 0
+  | let _ = while (i < m):
+      hits = hits + if (is_none(ds::trie::longest_match(t, text, i))): 0 else: 1
+      | i = i + 1
+    end
+  | hits
+end
+
+def bench_trie_scan_small(): scan(400);
+
+def bench_trie_scan_large(): scan(1600);

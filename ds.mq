@@ -203,18 +203,16 @@ module trie:
 
   # Returns the end (exclusive) of the longest stored word that starts at `start` in `s`, or None.
   def longest_match(t, s, start):
-    let n = len(s)
-    | var i = start
+    var i = start
     | var best = None
     | var go = true
     | let _ = while (go):
         let prefix = s[start:i]
-        | if (!has(t, prefix)):
+        | if (len(prefix) < i - start || !has(t, prefix)):
             go = false
           else:
             do
               best = if (t[prefix]["leaf"] && i > start): i else: best
-              | go = i < n
               | i = i + 1
             end
       end
