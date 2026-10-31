@@ -7,18 +7,14 @@ def heap_sort(items, max):
   | let _ = if (max): h = ds::heap::new_max() else: h = ds::heap::new()
   | var i = 0
   | let _ = while (i < len(items)):
-      do
-        h = ds::heap::push(h, items[i])
-        | i = i + 1
-      end
+      h = ds::heap::push(h, items[i])
+      | i = i + 1
     end
   | var out = []
   | let _ = while (ds::heap::size(h) > 0):
-      do
-        let r = ds::heap::pop(h)
-        | out += [r[0]]
-        | h = r[1]
-      end
+      let r = ds::heap::pop(h)
+      | out += [r[0]]
+      | h = r[1]
     end
   | out
 end
@@ -28,10 +24,8 @@ def scrambled(n):
   var out = []
   | var i = 0
   | let _ = while (i < n):
-      do
-        out += [(i * 37 + 11) % n]
-        | i = i + 1
-      end
+      out += [(i * 37 + 11) % n]
+      | i = i + 1
     end
   | out
 end

@@ -104,10 +104,8 @@ module heap:
     | var a = [n, max] + arr
     | var p = floor(n / 2)
     | let _ = while (p >= 1):
-        do
-          a = _down(a, p, n, max)
-          | p = p - 1
-        end
+        a = _down(a, p, n, max)
+        | p = p - 1
       end
     | a
   end
@@ -117,10 +115,8 @@ module heap:
     var cur = h
     | var out = []
     | let _ = while (cur[0] > 0):
-        do
-          out += [cur[2]]
-          | cur = _drop_root(cur)
-        end
+        out += [cur[2]]
+        | cur = _drop_root(cur)
       end
     | out
   end
@@ -131,19 +127,17 @@ module heap:
     | let n = len(arr)
     | var i = 0
     | let _ = while (i < n):
-        do
-          let x = arr[i]
-          | a = if (a[0] < k):
-              push(a, x)
-            elif (_less(a[2], x, max)):
-              do
-                a[2] = x
-                | _down(a, 1, a[0], max)
-              end
-            else:
-              a
-          | i = i + 1
-        end
+        let x = arr[i]
+        | a = if (a[0] < k):
+            push(a, x)
+          elif (_less(a[2], x, max)):
+            do
+              a[2] = x
+              | _down(a, 1, a[0], max)
+            end
+          else:
+            a
+        | i = i + 1
       end
     | reverse(to_sorted(a))
   end
@@ -239,10 +233,8 @@ module unionfind:
     var a = []
     | var i = 0
     | let _ = while (i < n):
-        do
-          a += [-1]
-          | i = i + 1
-        end
+        a += [-1]
+        | i = i + 1
       end
     | a
   end
@@ -300,17 +292,15 @@ module unionfind:
         | var root = pairs[0][0]
         | var i = 0
         | let _ = while (i < len(pairs)):
-            do
-              let _ = if (pairs[i][0] == root):
-                  cur += [pairs[i][1]]
-                else:
-                  do
-                    out += [cur]
-                    | cur = [pairs[i][1]]
-                    | root = pairs[i][0]
-                  end
-              | i = i + 1
-            end
+            let _ = if (pairs[i][0] == root):
+                cur += [pairs[i][1]]
+              else:
+                do
+                  out += [cur]
+                  | cur = [pairs[i][1]]
+                  | root = pairs[i][0]
+                end
+            | i = i + 1
           end
         | out += [cur]
         | sort(out)
@@ -322,10 +312,8 @@ module unionfind:
     var a = new(n)
     | var i = 0
     | let _ = while (i < len(pairs)):
-        do
-          a = union(a, pairs[i][0], pairs[i][1])
-          | i = i + 1
-        end
+        a = union(a, pairs[i][0], pairs[i][1])
+        | i = i + 1
       end
     | a
   end

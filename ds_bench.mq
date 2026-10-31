@@ -8,10 +8,8 @@ def push_many(n):
   var h = ds::heap::new()
   | var i = 0
   | let _ = while (i < n):
-      do
-        h = ds::heap::push(h, n - i)
-        | i = i + 1
-      end
+      h = ds::heap::push(h, n - i)
+      | i = i + 1
     end
   | ds::heap::size(h)
 end
@@ -20,10 +18,8 @@ def insert_many(n):
   var t = ds::trie::new()
   | var i = 0
   | let _ = while (i < n):
-      do
-        t = ds::trie::insert(t, "w" + to_string(i))
-        | i = i + 1
-      end
+      t = ds::trie::insert(t, "w" + to_string(i))
+      | i = i + 1
     end
   | len(keys(t))
 end
@@ -32,10 +28,8 @@ def chain(n):
   var uf = ds::unionfind::new(n)
   | var i = 0
   | let _ = while (i < n - 1):
-      do
-        uf = ds::unionfind::union(uf, i, i + 1)
-        | i = i + 1
-      end
+      uf = ds::unionfind::union(uf, i, i + 1)
+      | i = i + 1
     end
   | ds::unionfind::count(uf)
 end
