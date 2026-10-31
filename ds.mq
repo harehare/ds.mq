@@ -1,0 +1,314 @@
+# Data structures for mq: a binary heap, a trie and a union-find.
+#
+# Every structure is a plain array or dict, so it can be passed around like any other mq value.
+# Operations return the updated structure. Write `h = ds::heap::push(h, x)` so the old value is
+# not read afterwards: the update then happens in place instead of copying the whole structure.
+
+# A binary heap in one array: [size, is_max, item1, item2, ...] with the root at index 2.
+# Slots past `size` are spare capacity, which keeps `pop` from shrinking the array.
+module heap:
+  def _less(x, y, max): if (max): x > y else: x < y;
+
+  # Moves the item at position `start` (1-based) up until its parent is not after it.
+  def _up(arr, start, max):
+    var a = arr
+    | var p = start
+    | let _ = while (p > 1):
+        let q = floor(p / 2)
+        | if (_less(a[p + 1], a[q + 1], max)):
+            do
+              let t = a[q + 1]
+              | a[q + 1] = a[p + 1]
+              | a[p + 1] = t
+              | p = q
+            end
+          else:
+            p = 1
+      end
+    | a
+  end
+
+  # Moves the item at position `start` down within the first `m` items.
+  def _down(arr, start, m, max):
+    var a = arr
+    | var p = start
+    | var go = true
+    | let _ = while (go):
+        let l = 2 * p
+        | if (l > m):
+            go = false
+          else:
+            do
+              let r = l + 1
+              | let c = if (r <= m && _less(a[r + 1], a[l + 1], max)): r else: l
+              | if (_less(a[c + 1], a[p + 1], max)):
+                  do
+                    let t = a[c + 1]
+                    | a[c + 1] = a[p + 1]
+                    | a[p + 1] = t
+                    | p = c
+                  end
+                else:
+                  go = false
+            end
+      end
+    | a
+  end
+
+  # Removes the root and returns the heap without it.
+  def _drop_root(h):
+    var a = h
+    | let n = a[0]
+    | let max = a[1]
+    | if (n == 0):
+        error("heap: the heap is empty")
+      else:
+        do
+          a[2] = a[n + 1]
+          | a[n + 1] = None
+          | a[0] = n - 1
+          | _down(a, 1, n - 1, max)
+        end
+  end
+
+  # Returns an empty min-heap.
+  def new(): [0, false];
+
+  # Returns an empty max-heap.
+  def new_max(): [0, true];
+
+  # Returns the number of items.
+  def size(h): h[0];
+
+  # Returns the root (the smallest item, or the largest in a max-heap), or None if empty.
+  def peek(h): if (h[0] == 0): None else: h[2];
+
+  # Adds an item.
+  def push(h, x):
+    var a = h
+    | let n = a[0] + 1
+    | a[0] = n
+    | let _ = if (n + 1 < len(a)):
+        a[n + 1] = x
+      else:
+        a += [x]
+    | _up(a, n, a[1])
+  end
+
+  # Removes the root and returns [root, heap]. Fails if the heap is empty.
+  def pop(h): [peek(h), _drop_root(h)];
+
+  # Builds a heap from an array in linear time.
+  def from(arr, max = false):
+    let n = len(arr)
+    | var a = [n, max] + arr
+    | var p = floor(n / 2)
+    | let _ = while (p >= 1):
+        do
+          a = _down(a, p, n, max)
+          | p = p - 1
+        end
+      end
+    | a
+  end
+
+  # Returns the items in heap order, root first.
+  def to_sorted(h):
+    var cur = h
+    | var out = []
+    | let _ = while (cur[0] > 0):
+        do
+          out += [cur[2]]
+          | cur = _drop_root(cur)
+        end
+      end
+    | out
+  end
+
+  # Keeps the `k` best items of `arr` in a heap bounded by `k`.
+  def _bounded(arr, k, max):
+    var a = [0, max]
+    | let n = len(arr)
+    | var i = 0
+    | let _ = while (i < n):
+        do
+          let x = arr[i]
+          | a = if (a[0] < k):
+              push(a, x)
+            elif (_less(a[2], x, max)):
+              do
+                a[2] = x
+                | _down(a, 1, a[0], max)
+              end
+            else:
+              a
+          | i = i + 1
+        end
+      end
+    | reverse(to_sorted(a))
+  end
+
+  # Returns the `k` largest items of `arr`, largest first.
+  def largest(arr, k): if (k <= 0): [] else: _bounded(arr, k, false);
+
+  # Returns the `k` smallest items of `arr`, smallest first.
+  def smallest(arr, k): if (k <= 0): [] else: _bounded(arr, k, true);
+end
+
+# A trie as a flat dict: each prefix maps to {leaf, kids, value}. Looking up a prefix is one dict
+# access, and a word costs one entry per prefix.
+module trie:
+  def _node(t, prefix): get_or(t, prefix, {leaf: false, kids: {}, value: None});
+
+  # Returns an empty trie.
+  def new(): {"": {leaf: false, kids: {}, value: None}};
+
+  # Stores `value` under `word`.
+  def put(t, word, value):
+    var d = t
+    | let n = len(word)
+    | var i = 0
+    | let _ = while (i <= n):
+        let prefix = word[0:i]
+        | let node = _node(d, prefix)
+        | d = set(d, prefix, if (i < n): set(node, "kids", set(node["kids"], word[i], true)) else: set(set(node, "leaf", true), "value", value))
+        | i = i + 1
+      end
+    | d
+  end
+
+  # Adds `word`.
+  def insert(t, word): put(t, word, true);
+
+  # Returns true if `word` was stored.
+  def contains(t, word): has(t, word) && t[word]["leaf"];
+
+  # Returns the value stored under `word`, or None.
+  def lookup(t, word): if (contains(t, word)): t[word]["value"] else: None;
+
+  # Returns true if some stored word starts with `prefix`.
+  def has_prefix(t, prefix): has(t, prefix);
+
+  # Returns the stored words starting with `prefix`, sorted.
+  def words(t, prefix):
+    if (!has(t, prefix)):
+      []
+    else:
+      do
+        var queue = [prefix]
+        | var head = 0
+        | var out = []
+        | let _ = while (head < len(queue)):
+            let cur = queue[head]
+            | let node = t[cur]
+            | out += if (node["leaf"]): [cur] else: []
+            | queue += map(sort(keys(node["kids"])), fn(c): cur + c;)
+            | head = head + 1
+          end
+        | sort(out)
+      end
+  end
+
+  # Returns the end (exclusive) of the longest stored word that starts at `start` in `s`, or None.
+  def longest_match(t, s, start):
+    let n = len(s)
+    | var i = start
+    | var best = None
+    | var go = true
+    | let _ = while (go):
+        let prefix = s[start:i]
+        | if (!has(t, prefix)):
+            go = false
+          else:
+            do
+              best = if (t[prefix]["leaf"] && i > start): i else: best
+              | go = i < n
+              | i = i + 1
+            end
+      end
+    | best
+  end
+end
+
+# A union-find over 0..n-1 in one array: a root holds the negated size of its set, any other
+# element holds its parent. Union by size keeps a find at O(log n).
+module unionfind:
+  def _check(uf, x):
+    if (x < 0 || x >= len(uf)): error("unionfind: element out of range: " + to_string(x)) else: x;
+
+  # Returns n singleton sets.
+  def new(n):
+    var a = []
+    | var i = 0
+    | let _ = while (i < n):
+        do
+          a += [-1]
+          | i = i + 1
+        end
+      end
+    | a
+  end
+
+  # Returns the root of the set containing `x`.
+  def find(uf, x):
+    var r = _check(uf, x)
+    | let _ = while (uf[r] >= 0): r = uf[r];
+    | r
+  end
+
+  # Merges the sets containing `x` and `y`.
+  def union(uf, x, y):
+    let rx = find(uf, x)
+    | let ry = find(uf, y)
+    | if (rx == ry):
+        uf
+      else:
+        do
+          var a = uf
+          | let big = if (a[rx] <= a[ry]): rx else: ry
+          | let small = if (big == rx): ry else: rx
+          | a[big] = a[big] + a[small]
+          | a[small] = big
+          | a
+        end
+  end
+
+  # Returns true if `x` and `y` are in the same set.
+  def connected(uf, x, y): find(uf, x) == find(uf, y);
+
+  # Returns the size of the set containing `x`.
+  def size_of(uf, x): -uf[find(uf, x)];
+
+  # Returns the number of sets.
+  def count(uf): len(filter(uf, fn(v): v < 0;));
+
+  # Returns the sets as arrays of members, ordered by their smallest member.
+  def groups(uf):
+    var by_root = {}
+    | var order = []
+    | var i = 0
+    | let _ = while (i < len(uf)):
+        do
+          let r = find(uf, i)
+          | let key = to_string(r)
+          | order += if (has(by_root, key)): [] else: [key]
+          | by_root = set(by_root, key, get_or(by_root, key, []) + [i])
+          | i = i + 1
+        end
+      end
+    | map(order, fn(key): by_root[key];)
+  end
+
+  # Returns the sets of n elements joined by `pairs` ([x, y] arrays).
+  def from_pairs(n, pairs):
+    var a = new(n)
+    | var i = 0
+    | let _ = while (i < len(pairs)):
+        do
+          a = union(a, pairs[i][0], pairs[i][1])
+          | i = i + 1
+        end
+      end
+    | a
+  end
+end
