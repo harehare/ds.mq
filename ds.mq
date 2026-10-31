@@ -157,9 +157,9 @@ end
 
 # A trie as a flat dict: each prefix maps to {leaf, kids, value}. Looking up a prefix is one dict
 # access, and a word costs one entry per prefix.
+# `put` reads the dict with `has` and indexing rather than `get_or`: a function written in mq that
+# received the dict would leave it shared, and the update that follows would copy all of it.
 module trie:
-  def _node(t, prefix): get_or(t, prefix, {leaf: false, kids: {}, value: None});
-
   # Returns an empty trie.
   def new(): {"": {leaf: false, kids: {}, value: None}};
 
@@ -170,7 +170,7 @@ module trie:
     | var i = 0
     | let _ = while (i <= n):
         let prefix = word[0:i]
-        | let node = _node(d, prefix)
+        | let node = if (has(d, prefix)): d[prefix] else: {leaf: false, kids: {}, value: None}
         | d = set(d, prefix, if (i < n): set(node, "kids", set(node["kids"], word[i], true)) else: set(set(node, "leaf", true), "value", value))
         | i = i + 1
       end
@@ -257,9 +257,20 @@ module unionfind:
   end
 
   # Merges the sets containing `x` and `y`.
+  #
+  # The roots are walked inline: a helper that received `uf` would leave the array shared, and the
+  # update below would copy all of it.
   def union(uf, x, y):
-    let rx = find(uf, x)
-    | let ry = find(uf, y)
+    var rx = x
+    | var ry = y
+    | let n = len(uf)
+    | let _ = if (x < 0 || x >= n || y < 0 || y >= n): error("unionfind: element out of range") else: None
+    | let _ = while (uf[rx] >= 0):
+        rx = uf[rx]
+      end
+    | let _ = while (uf[ry] >= 0):
+        ry = uf[ry]
+      end
     | if (rx == ry):
         uf
       else:

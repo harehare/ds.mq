@@ -115,4 +115,7 @@ The old value is then released and the update happens in place. If the old value
 
 ```sh
 mq-test ds_tests.mq
+mq-bench -L . ds_bench.mq
 ```
+
+Each `_small` / `_large` pair in `ds_bench.mq` grows one structure at two sizes. A ratio close to the size ratio means updates run in place.

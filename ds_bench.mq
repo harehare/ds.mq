@@ -1,0 +1,59 @@
+import "ds"
+
+# Each bench grows one structure through its public API. Compare the timings of the `_small` and
+# `_large` pairs: a ratio near the size ratio means the updates run in place; a ratio near its square
+# means every update copies the structure.
+
+def push_many(n):
+  var h = ds::heap::new()
+  | var i = 0
+  | let _ = while (i < n):
+      do
+        h = ds::heap::push(h, n - i)
+        | i = i + 1
+      end
+    end
+  | ds::heap::size(h)
+end
+
+def insert_many(n):
+  var t = ds::trie::new()
+  | var i = 0
+  | let _ = while (i < n):
+      do
+        t = ds::trie::insert(t, "w" + to_string(i))
+        | i = i + 1
+      end
+    end
+  | len(keys(t))
+end
+
+def chain(n):
+  var uf = ds::unionfind::new(n)
+  | var i = 0
+  | let _ = while (i < n - 1):
+      do
+        uf = ds::unionfind::union(uf, i, i + 1)
+        | i = i + 1
+      end
+    end
+  | ds::unionfind::count(uf)
+end
+
+def scrambled(n): map(range(n), fn(i): (i * 7919) % n;);
+
+def bench_heap_push_small(): push_many(2000);
+
+def bench_heap_push_large(): push_many(8000);
+
+def bench_heap_from_and_drain(): len(ds::heap::to_sorted(ds::heap::from(scrambled(5000), false)));
+
+def bench_heap_largest_of_many(): ds::heap::largest(scrambled(20000), 10);
+
+def bench_trie_insert_small(): insert_many(1000);
+
+def bench_trie_insert_large(): insert_many(4000);
+
+def bench_unionfind_chain_small(): chain(2000);
+
+def bench_unionfind_chain_large(): chain(8000);
