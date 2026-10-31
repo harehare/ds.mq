@@ -290,19 +290,31 @@ module unionfind:
 
   # Returns the sets as arrays of members, ordered by their smallest member.
   def groups(uf):
-    var by_root = {}
-    | var order = []
-    | var i = 0
-    | let _ = while (i < len(uf)):
-        do
-          let r = find(uf, i)
-          | let key = to_string(r)
-          | order += if (has(by_root, key)): [] else: [key]
-          | by_root = set(by_root, key, get_or(by_root, key, []) + [i])
-          | i = i + 1
-        end
+    if (len(uf) == 0):
+      []
+    else:
+      do
+        let pairs = sort(map(range(0, len(uf) - 1), fn(i): [find(uf, i), i];))
+        | var out = []
+        | var cur = []
+        | var root = pairs[0][0]
+        | var i = 0
+        | let _ = while (i < len(pairs)):
+            do
+              let _ = if (pairs[i][0] == root):
+                  cur += [pairs[i][1]]
+                else:
+                  do
+                    out += [cur]
+                    | cur = [pairs[i][1]]
+                    | root = pairs[i][0]
+                  end
+              | i = i + 1
+            end
+          end
+        | out += [cur]
+        | sort(out)
       end
-    | map(order, fn(key): by_root[key];)
   end
 
   # Returns the sets of n elements joined by `pairs` ([x, y] arrays).

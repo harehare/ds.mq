@@ -57,3 +57,7 @@ def bench_trie_insert_large(): insert_many(4000);
 def bench_unionfind_chain_small(): chain(2000);
 
 def bench_unionfind_chain_large(): chain(8000);
+
+def bench_unionfind_groups_small(): len(ds::unionfind::groups(ds::unionfind::new(2000)));
+
+def bench_unionfind_groups_large(): len(ds::unionfind::groups(ds::unionfind::new(8000)));
