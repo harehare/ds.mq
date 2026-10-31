@@ -1,5 +1,8 @@
 <h1 align="center">ds.mq</h1>
 
+> [!WARNING]
+> This project is currently under active development. APIs and features may change without notice.
+
 Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie and a union-find, written as an mq module.
 
 ## Modules
