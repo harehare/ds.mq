@@ -4,8 +4,7 @@
 # Operations return the updated structure. Write `h = ds::heap::push(h, x)` so the old value is
 # not read afterwards: the update then happens in place instead of copying the whole structure.
 
-# A binary heap in one array: [size, is_max, item1, item2, ...] with the root at index 2.
-# Slots past `size` are spare capacity, which keeps `pop` from shrinking the array.
+# A binary heap in one array: [is_max, item1, item2, ...] with the root at index 1.
 module heap:
   def _less(x, y, max): if (max): x > y else: x < y;
 
@@ -15,11 +14,11 @@ module heap:
     | var p = start
     | let _ = while (p > 1):
         let q = floor(p / 2)
-        | if (_less(a[p + 1], a[q + 1], max)):
+        | if (_less(a[p], a[q], max)):
             do
-              let t = a[q + 1]
-              | a[q + 1] = a[p + 1]
-              | a[p + 1] = t
+              let t = a[q]
+              | a[q] = a[p]
+              | a[p] = t
               | p = q
             end
           else:
@@ -40,12 +39,12 @@ module heap:
           else:
             do
               let r = l + 1
-              | let c = if (r <= m && _less(a[r + 1], a[l + 1], max)): r else: l
-              | if (_less(a[c + 1], a[p + 1], max)):
+              | let c = if (r <= m && _less(a[r], a[l], max)): r else: l
+              | if (_less(a[c], a[p], max)):
                   do
-                    let t = a[c + 1]
-                    | a[c + 1] = a[p + 1]
-                    | a[p + 1] = t
+                    let t = a[c]
+                    | a[c] = a[p]
+                    | a[p] = t
                     | p = c
                   end
                 else:
@@ -58,41 +57,37 @@ module heap:
   # Removes the root and returns the heap without it.
   def _drop_root(h):
     var a = h
-    | let n = a[0]
-    | let max = a[1]
+    | let n = len(a) - 1
+    | let max = a[0]
     | if (n == 0):
         error("heap: the heap is empty")
       else:
         do
-          a[2] = a[n + 1]
-          | a[n + 1] = None
-          | a[0] = n - 1
+          a[1] = a[n]
+          | a = slice(a, 0, n)
           | _down(a, 1, n - 1, max)
         end
   end
 
   # Returns an empty min-heap.
-  def new(): [0, false];
+  def new(): [false];
 
   # Returns an empty max-heap.
-  def new_max(): [0, true];
+  def new_max(): [true];
 
   # Returns the number of items.
-  def size(h): h[0];
+  def size(h): len(h) - 1;
 
   # Returns the root (the smallest item, or the largest in a max-heap), or None if empty.
-  def peek(h): if (h[0] == 0): None else: h[2];
+  def peek(h): if (len(h) == 1): None else: h[1];
 
   # Adds an item.
   def push(h, x):
     var a = h
-    | let n = a[0] + 1
-    | a[0] = n
-    | let _ = if (n + 1 < len(a)):
-        a[n + 1] = x
-      else:
-        a += [x]
-    | _up(a, n, a[1])
+    | let max = a[0]
+    | a += [x]
+    | let n = len(a) - 1
+    | _up(a, n, max)
   end
 
   # Removes the root and returns [root, heap]. Fails if the heap is empty.
@@ -101,7 +96,7 @@ module heap:
   # Builds a heap from an array in linear time.
   def from(arr, max = false):
     let n = len(arr)
-    | var a = [n, max] + arr
+    | var a = [max] + arr
     | var p = floor(n / 2)
     | let _ = while (p >= 1):
         a = _down(a, p, n, max)
@@ -114,8 +109,8 @@ module heap:
   def to_sorted(h):
     var cur = h
     | var out = []
-    | let _ = while (cur[0] > 0):
-        out += [cur[2]]
+    | let _ = while (len(cur) > 1):
+        out += [cur[1]]
         | cur = _drop_root(cur)
       end
     | out
@@ -123,17 +118,18 @@ module heap:
 
   # Keeps the `k` best items of `arr` in a heap bounded by `k`.
   def _bounded(arr, k, max):
-    var a = [0, max]
+    var a = [max]
     | let n = len(arr)
     | var i = 0
     | let _ = while (i < n):
         let x = arr[i]
-        | a = if (a[0] < k):
+        | a = if (len(a) - 1 < k):
             push(a, x)
-          elif (_less(a[2], x, max)):
+          elif (_less(a[1], x, max)):
             do
-              a[2] = x
-              | _down(a, 1, a[0], max)
+              a[1] = x
+              | let m = len(a) - 1
+              | _down(a, 1, m, max)
             end
           else:
             a
