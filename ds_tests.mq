@@ -542,3 +542,120 @@ def test_deque_drains_to_empty_and_refills():
   | assert_true(ds::deque::is_empty(d))
   | assert_eq(ds::deque::to_array(ds::deque::push_front(d, 9)), [9])
 end
+
+# =========================================================================
+# sorted
+# =========================================================================
+
+# The inserted items that a sorted list fails to place where `sort` would, for n scrambled inserts.
+def sorted_disagreements(n):
+  let items = map(range(0, n - 1), fn(i): (i * 37 + 11) % n % 23;)
+  | var s = ds::sorted::new()
+  | var bad = []
+  | var i = 0
+  | let _ = while (i < n):
+      s = ds::sorted::insert(s, items[i])
+      | bad = if (s != sort(items[0:i + 1])): bad + [i] else: bad
+      | i = i + 1
+    end
+  | bad
+end
+
+def test_sorted_from_sorts():
+  assert_eq(ds::sorted::from([5, 1, 4, 1]), [1, 1, 4, 5])
+  | assert_eq(ds::sorted::from([]), [])
+end
+
+def test_sorted_insert_keeps_order_and_duplicates():
+  let s = ds::sorted::from([1, 3, 5])
+  | assert_eq(ds::sorted::insert(s, 0), [0, 1, 3, 5])
+  | assert_eq(ds::sorted::insert(s, 4), [1, 3, 4, 5])
+  | assert_eq(ds::sorted::insert(s, 9), [1, 3, 5, 9])
+  | assert_eq(ds::sorted::insert(s, 3), [1, 3, 3, 5])
+  | assert_eq(ds::sorted::insert(ds::sorted::new(), 7), [7])
+end
+
+def test_sorted_insert_matches_sort_over_many_inserts():
+  assert_eq(sorted_disagreements(120), [])
+end
+
+def test_sorted_bounds_around_duplicates():
+  let s = ds::sorted::from([1, 3, 3, 3, 5])
+  | assert_eq(ds::sorted::lower_bound(s, 3), 1)
+  | assert_eq(ds::sorted::upper_bound(s, 3), 4)
+  | assert_eq(ds::sorted::lower_bound(s, 0), 0)
+  | assert_eq(ds::sorted::upper_bound(s, 9), 5)
+  | assert_eq(ds::sorted::lower_bound(s, 4), 4)
+  | assert_eq(ds::sorted::upper_bound(s, 4), 4)
+end
+
+def test_sorted_bounds_of_an_empty_list():
+  assert_eq(ds::sorted::lower_bound([], 1), 0)
+  | assert_eq(ds::sorted::upper_bound([], 1), 0)
+end
+
+def test_sorted_contains():
+  let s = ds::sorted::from([2, 4, 6])
+  | assert_true(ds::sorted::contains(s, 4))
+  | assert_true(ds::sorted::contains(s, 2))
+  | assert_true(ds::sorted::contains(s, 6))
+  | assert_eq(ds::sorted::contains(s, 5), false)
+  | assert_eq(ds::sorted::contains(s, 7), false)
+  | assert_eq(ds::sorted::contains([], 1), false)
+end
+
+def test_sorted_remove_drops_one_equal_item():
+  let s = ds::sorted::from([1, 3, 3, 5])
+  | assert_eq(ds::sorted::remove(s, 3), [1, 3, 5])
+  | assert_eq(ds::sorted::remove(s, 1), [3, 3, 5])
+  | assert_eq(ds::sorted::remove(s, 5), [1, 3, 3])
+  | assert_eq(ds::sorted::remove(s, 4), [1, 3, 3, 5])
+  | assert_eq(ds::sorted::remove([], 4), [])
+end
+
+def test_sorted_ceiling_and_floor_item():
+  let s = ds::sorted::from([10, 20, 30])
+  | assert_eq(ds::sorted::ceiling(s, 20), 20)
+  | assert_eq(ds::sorted::ceiling(s, 21), 30)
+  | assert_eq(ds::sorted::ceiling(s, 5), 10)
+  | assert_none(ds::sorted::ceiling(s, 31))
+  | assert_eq(ds::sorted::floor_item(s, 20), 20)
+  | assert_eq(ds::sorted::floor_item(s, 29), 20)
+  | assert_eq(ds::sorted::floor_item(s, 10), 10)
+  | assert_eq(ds::sorted::floor_item(s, 15), 10)
+  | assert_eq(ds::sorted::floor_item(s, 31), 30)
+  | assert_none(ds::sorted::floor_item(s, 9))
+end
+
+def test_sorted_between_is_half_open():
+  let s = ds::sorted::from([1, 2, 3, 4, 5])
+  | assert_eq(ds::sorted::between(s, 2, 4), [2, 3])
+  | assert_eq(ds::sorted::between(s, 0, 9), [1, 2, 3, 4, 5])
+  | assert_eq(ds::sorted::between(s, 3, 3), [])
+  | assert_eq(ds::sorted::between(s, 6, 9), [])
+end
+
+def test_sorted_first_last_get():
+  let s = ds::sorted::from([3, 1, 2])
+  | assert_eq(ds::sorted::first(s), 1)
+  | assert_eq(ds::sorted::last(s), 3)
+  | assert_eq(ds::sorted::get(s, 1), 2)
+  | assert_eq(ds::sorted::size(s), 3)
+  | assert_none(ds::sorted::first([]))
+  | assert_none(ds::sorted::last([]))
+  | assert_eq(try: ds::sorted::get(s, 3) catch: "failed", "failed")
+  | assert_eq(try: ds::sorted::get(s, -1) catch: "failed", "failed")
+end
+
+def test_sorted_orders_strings():
+  let s = ds::sorted::insert(ds::sorted::from(["pear", "apple"]), "fig")
+  | assert_eq(s, ["apple", "fig", "pear"])
+  | assert_eq(ds::sorted::ceiling(s, "b"), "fig")
+end
+
+def test_sorted_does_not_modify_the_original():
+  let s = ds::sorted::from([1, 3])
+  | let t = ds::sorted::insert(s, 2)
+  | assert_eq(s, [1, 3])
+  | assert_eq(t, [1, 2, 3])
+end

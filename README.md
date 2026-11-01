@@ -3,7 +3,7 @@
 > [!WARNING]
 > This project is currently under active development. APIs and features may change without notice.
 
-Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie, a union-find and a deque, written as an mq module.
+Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie, a union-find, a deque and a sorted list, written as an mq module.
 
 ## Modules
 
@@ -13,6 +13,7 @@ Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie,
 | `ds::trie` | prefix lookup, longest-match scanning of text |
 | `ds::unionfind` | grouping items by pairwise links |
 | `ds::deque` | queues, breadth-first search, sliding windows |
+| `ds::sorted` | ordered sets, nearest-key lookup, range queries |
 
 ## Installation
 
@@ -115,6 +116,29 @@ mq -L . -I null '
 | `size(d)` / `is_empty(d)` | number of items / emptiness test |
 | `to_array(d)` | the items in order |
 
+### Sorted list
+
+```sh
+mq -L . -I null '
+  import "ds"
+  | let s = ds::sorted::insert(ds::sorted::from([40, 10, 30]), 20)
+  | [s, ds::sorted::ceiling(s, 25), ds::sorted::between(s, 15, 35)]
+'
+# [[10, 20, 30, 40], 30, [20, 30]]
+```
+
+A sorted list is a plain array in ascending order, so `len(s)` and `s[i]` work on it directly.
+
+| Function | Description |
+| --- | --- |
+| `new()` / `from(arr)` | empty list / sorted copy of an array |
+| `insert(s, x)` / `remove(s, x)` | add an item / drop one equal item |
+| `contains(s, x)` | membership test |
+| `lower_bound(s, x)` / `upper_bound(s, x)` | position of the first item `>= x` / `> x` |
+| `ceiling(s, x)` / `floor_item(s, x)` | nearest item `>= x` / `<= x`, `None` if there is none |
+| `between(s, lo, hi)` | items from `lo` up to but not including `hi` |
+| `first(s)` / `last(s)` / `get(s, i)` / `size(s)` | ends, item at a position, number of items |
+
 ## Updating in place
 
 Every structure is a plain array or dict, and each operation returns the updated value. Assign the result back to the variable you passed in, and do not read the old value afterwards:
@@ -137,6 +161,8 @@ The old value is then released and the update happens in place. If the old value
 | union-find `find`, `union` | O(log n) |
 | deque push, pop, `get`, `front`, `back` | O(1) amortized |
 | deque `from`, `to_array` | O(n) |
+| sorted `contains`, `lower_bound`, `ceiling`, `floor_item` | O(log n) |
+| sorted `insert`, `remove` | O(n) |
 
 ## Development
 

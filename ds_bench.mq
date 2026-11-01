@@ -49,6 +49,27 @@ def churn(n):
   | total
 end
 
+def insert_sorted(n):
+  var s = ds::sorted::new()
+  | var i = 0
+  | let _ = while (i < n):
+      s = ds::sorted::insert(s, (i * 7919) % n)
+      | i = i + 1
+    end
+  | len(s)
+end
+
+def lookups(n):
+  let s = ds::sorted::from(map(range(0, n - 1), fn(i): i * 2;))
+  | var i = 0
+  | var hits = 0
+  | let _ = while (i < n):
+      hits = hits + if (ds::sorted::contains(s, i)): 1 else: 0
+      | i = i + 1
+    end
+  | hits
+end
+
 def scrambled(n): map(range(n), fn(i): (i * 7919) % n;);
 
 def bench_heap_push_small(): push_many(2000);
@@ -96,3 +117,11 @@ def bench_trie_scan_large(): scan(1600);
 def bench_deque_churn_small(): churn(2000);
 
 def bench_deque_churn_large(): churn(8000);
+
+def bench_sorted_insert_small(): insert_sorted(1000);
+
+def bench_sorted_insert_large(): insert_sorted(4000);
+
+def bench_sorted_lookup_small(): lookups(1000);
+
+def bench_sorted_lookup_large(): lookups(4000);
