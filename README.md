@@ -175,3 +175,5 @@ mq-bench -L . ds_bench.mq
 ```
 
 Each `_small` / `_large` pair in `ds_bench.mq` grows one structure at two sizes. A ratio close to the size ratio means updates run in place.
+
+One of the goals of these modules is also to check mq for performance problems, so every structure comes with a benchmark.
