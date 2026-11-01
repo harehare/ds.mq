@@ -3,7 +3,7 @@
 > [!WARNING]
 > This project is currently under active development. APIs and features may change without notice.
 
-Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie and a union-find, written as an mq module.
+Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie, a union-find and a deque, written as an mq module.
 
 ## Modules
 
@@ -12,6 +12,7 @@ Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie 
 | `ds::heap` | priority queues, top-k selection |
 | `ds::trie` | prefix lookup, longest-match scanning of text |
 | `ds::unionfind` | grouping items by pairwise links |
+| `ds::deque` | queues, breadth-first search, sliding windows |
 
 ## Installation
 
@@ -93,6 +94,27 @@ mq -L . -I null '
 | `groups(uf)` | the sets as arrays of members |
 | `from_pairs(n, pairs)` | build from `[x, y]` links |
 
+### Deque
+
+```sh
+mq -L . -I null '
+  import "ds"
+  | let d = ds::deque::push_front(ds::deque::from([2, 3]), 1)
+  | ds::deque::to_array(d)
+'
+# [1, 2, 3]
+```
+
+| Function | Description |
+| --- | --- |
+| `new()` / `from(arr)` | empty deque / deque holding an array, first item at the front |
+| `push_back(d, x)` / `push_front(d, x)` | add at one end |
+| `pop_front(d)` / `pop_back(d)` | `[item, deque]`, fails when empty |
+| `front(d)` / `back(d)` | end items, `None` when empty |
+| `get(d, i)` | item `i` counted from the front |
+| `size(d)` / `is_empty(d)` | number of items / emptiness test |
+| `to_array(d)` | the items in order |
+
 ## Updating in place
 
 Every structure is a plain array or dict, and each operation returns the updated value. Assign the result back to the variable you passed in, and do not read the old value afterwards:
@@ -113,6 +135,8 @@ The old value is then released and the update happens in place. If the old value
 | trie `put`, `contains`, `has_prefix` | O(length of the word) |
 | trie `words` | O(matches) |
 | union-find `find`, `union` | O(log n) |
+| deque push, pop, `get`, `front`, `back` | O(1) amortized |
+| deque `from`, `to_array` | O(n) |
 
 ## Development
 

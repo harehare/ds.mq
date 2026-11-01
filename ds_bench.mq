@@ -34,6 +34,21 @@ def chain(n):
   | ds::unionfind::count(uf)
 end
 
+def churn(n):
+  var d = ds::deque::new()
+  | var i = 0
+  | let _ = while (i < n):
+      d = if (i % 2 == 0): ds::deque::push_back(d, i) else: ds::deque::push_front(d, i)
+      | i = i + 1
+    end
+  | var total = 0
+  | let _ = while (!ds::deque::is_empty(d)):
+      d = if (total % 2 == 0): ds::deque::pop_front(d)[1] else: ds::deque::pop_back(d)[1]
+      | total = total + 1
+    end
+  | total
+end
+
 def scrambled(n): map(range(n), fn(i): (i * 7919) % n;);
 
 def bench_heap_push_small(): push_many(2000);
@@ -77,3 +92,7 @@ end
 def bench_trie_scan_small(): scan(400);
 
 def bench_trie_scan_large(): scan(1600);
+
+def bench_deque_churn_small(): churn(2000);
+
+def bench_deque_churn_large(): churn(8000);

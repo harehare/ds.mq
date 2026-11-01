@@ -316,3 +316,120 @@ module unionfind:
     | a
   end
 end
+
+# A double-ended queue as a ring buffer in one array: [head, size, capacity, slot, ...].
+# The capacity doubles when the buffer is full, so pushes and pops at both ends are O(1) amortized.
+module deque:
+  def _check(d, i):
+    if (i < 0 || i >= d[1]): error("deque: index out of range: " + to_string(i)) else: i;
+
+  # Copies the items in order into a buffer twice as large.
+  def _grow(d):
+    let n = d[1]
+    | let cap = d[2] * 2
+    | var items = []
+    | var i = 0
+    | let _ = while (i < n):
+        items += [d[3 + (d[0] + i) % d[2]]]
+        | i = i + 1
+      end
+    | var pad = []
+    | var j = n
+    | let _ = while (j < cap):
+        pad += [None]
+        | j = j + 1
+      end
+    | [0, n, cap] + items + pad
+  end
+
+  # Returns an empty deque.
+  def new(): [0, 0, 4, None, None, None, None];
+
+  # Returns the number of items.
+  def size(d): d[1];
+
+  # Returns true if there are no items.
+  def is_empty(d): d[1] == 0;
+
+  # Returns the first item, or None if empty.
+  def front(d): if (d[1] == 0): None else: d[3 + d[0]];
+
+  # Returns the last item, or None if empty.
+  def back(d): if (d[1] == 0): None else: d[3 + (d[0] + d[1] - 1) % d[2]];
+
+  # Returns the item at position `i` counted from the front.
+  def get(d, i): d[3 + (d[0] + _check(d, i)) % d[2]];
+
+  # Adds an item at the back.
+  def push_back(d, x):
+    var a = d
+    | let _ = if (a[1] == a[2]): a = _grow(a) else: None
+    | a[3 + (a[0] + a[1]) % a[2]] = x
+    | a[1] = a[1] + 1
+    | a
+  end
+
+  # Adds an item at the front.
+  def push_front(d, x):
+    var a = d
+    | let _ = if (a[1] == a[2]): a = _grow(a) else: None
+    | let h = (a[0] + a[2] - 1) % a[2]
+    | a[3 + h] = x
+    | a[0] = h
+    | a[1] = a[1] + 1
+    | a
+  end
+
+  # Removes the first item and returns [item, deque]. Fails if the deque is empty.
+  def pop_front(d):
+    var a = d
+    | if (a[1] == 0):
+        error("deque: the deque is empty")
+      else:
+        do
+          let h = a[0]
+          | let item = a[3 + h]
+          | a[3 + h] = None
+          | a[0] = (h + 1) % a[2]
+          | a[1] = a[1] - 1
+          | [item, a]
+        end
+  end
+
+  # Removes the last item and returns [item, deque]. Fails if the deque is empty.
+  def pop_back(d):
+    var a = d
+    | if (a[1] == 0):
+        error("deque: the deque is empty")
+      else:
+        do
+          let s = 3 + (a[0] + a[1] - 1) % a[2]
+          | let item = a[s]
+          | a[s] = None
+          | a[1] = a[1] - 1
+          | [item, a]
+        end
+  end
+
+  # Returns the items in order, front first.
+  def to_array(d):
+    var out = []
+    | var i = 0
+    | let _ = while (i < d[1]):
+        out += [d[3 + (d[0] + i) % d[2]]]
+        | i = i + 1
+      end
+    | out
+  end
+
+  # Builds a deque from an array, the first item at the front.
+  def from(arr):
+    var d = new()
+    | var i = 0
+    | let _ = while (i < len(arr)):
+        d = push_back(d, arr[i])
+        | i = i + 1
+      end
+    | d
+  end
+end

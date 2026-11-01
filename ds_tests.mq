@@ -413,3 +413,132 @@ def test_unionfind_new_zero_is_empty():
   | assert_eq(ds::unionfind::count(uf), 0)
   | assert_eq(ds::unionfind::groups(uf), [])
 end
+
+# =========================================================================
+# deque
+# =========================================================================
+
+# Runs n scripted pushes and pops on a deque and on a plain array, and returns the steps where the
+# two disagree. The script grows and drains the deque several times, so the ring wraps around.
+def deque_disagreements(n):
+  var d = ds::deque::new()
+  | var m = []
+  | var bad = []
+  | var i = 0
+  | let _ = while (i < n):
+      let phase = floor(i / 40) % 2
+      | let raw = (i * 7 + floor(i / 5)) % 4
+      | let op = if (phase == 0): raw % 2 + (if (raw == 3): 2 else: 0) else: 2 + raw % 2 + (if (raw == 0): 2 else: 0)
+      | let k = if (len(m) == 0 && op >= 4): 0 else: op
+      | if (k == 0):
+          do
+            d = ds::deque::push_back(d, i)
+            | m = m + [i]
+          end
+        elif (k == 1 || k == 2):
+          do
+            d = ds::deque::push_front(d, i)
+            | m = [i] + m
+          end
+        elif (k == 3 || k == 4):
+          do
+            let r = ds::deque::pop_front(d)
+            | d = r[1]
+            | bad = if (r[0] != m[0]): bad + [i] else: bad
+            | m = m[1:len(m)]
+          end
+        else:
+          do
+            let r = ds::deque::pop_back(d)
+            | d = r[1]
+            | bad = if (r[0] != m[len(m) - 1]): bad + [i] else: bad
+            | m = m[0:len(m) - 1]
+          end
+      | bad = if (ds::deque::to_array(d) != m || ds::deque::size(d) != len(m)): bad + [i] else: bad
+      | i = i + 1
+    end
+  | bad
+end
+
+def test_deque_new_is_empty():
+  let d = ds::deque::new()
+  | assert_eq(ds::deque::size(d), 0)
+  | assert_true(ds::deque::is_empty(d))
+  | assert_none(ds::deque::front(d))
+  | assert_none(ds::deque::back(d))
+  | assert_eq(ds::deque::to_array(d), [])
+end
+
+def test_deque_pushes_at_both_ends():
+  let d = ds::deque::from([2, 3])
+  | let d = ds::deque::push_front(d, 1)
+  | let d = ds::deque::push_back(d, 4)
+  | assert_eq(ds::deque::to_array(d), [1, 2, 3, 4])
+  | assert_eq(ds::deque::front(d), 1)
+  | assert_eq(ds::deque::back(d), 4)
+  | assert_eq(ds::deque::size(d), 4)
+end
+
+def test_deque_pops_from_both_ends():
+  let r = ds::deque::pop_front(ds::deque::from([1, 2, 3]))
+  | let s = ds::deque::pop_back(r[1])
+  | assert_eq(r[0], 1)
+  | assert_eq(s[0], 3)
+  | assert_eq(ds::deque::to_array(s[1]), [2])
+end
+
+def test_deque_pop_on_empty_fails():
+  assert_eq(try: ds::deque::pop_front(ds::deque::new()) catch: "failed", "failed")
+  | assert_eq(try: ds::deque::pop_back(ds::deque::new()) catch: "failed", "failed")
+end
+
+def test_deque_does_not_modify_the_original():
+  let d = ds::deque::from([1, 2, 3])
+  | let d2 = ds::deque::push_back(d, 4)
+  | let r = ds::deque::pop_front(d)
+  | assert_eq(ds::deque::to_array(d), [1, 2, 3])
+  | assert_eq(ds::deque::to_array(d2), [1, 2, 3, 4])
+  | assert_eq(r[0], 1)
+end
+
+def test_deque_get_counts_from_the_front():
+  let d = ds::deque::push_front(ds::deque::from([2, 3]), 1)
+  | assert_eq(ds::deque::get(d, 0), 1)
+  | assert_eq(ds::deque::get(d, 2), 3)
+  | assert_eq(try: ds::deque::get(d, 3) catch: "failed", "failed")
+  | assert_eq(try: ds::deque::get(d, -1) catch: "failed", "failed")
+end
+
+def test_deque_keeps_none_as_an_item():
+  let d = ds::deque::from([None, 1])
+  | let r = ds::deque::pop_front(d)
+  | assert_none(r[0])
+  | assert_eq(ds::deque::size(r[1]), 1)
+end
+
+def test_deque_grows_past_its_first_capacity():
+  let d = ds::deque::from(range(0, 99))
+  | assert_eq(ds::deque::size(d), 100)
+  | assert_eq(ds::deque::to_array(d), range(0, 99))
+  | assert_eq(ds::deque::get(d, 57), 57)
+end
+
+def test_deque_grows_while_wrapped_around():
+  let d = ds::deque::from([1, 2, 3, 4])
+  | let d = ds::deque::pop_front(d)[1]
+  | let d = ds::deque::push_back(d, 5)
+  | let d = ds::deque::push_front(d, 0)
+  | let d = ds::deque::push_front(d, -1)
+  | assert_eq(ds::deque::to_array(d), [-1, 0, 2, 3, 4, 5])
+end
+
+def test_deque_agrees_with_an_array_over_a_long_script():
+  assert_eq(deque_disagreements(400), [])
+end
+
+def test_deque_drains_to_empty_and_refills():
+  let d = ds::deque::from([1, 2, 3])
+  | let d = ds::deque::pop_back(ds::deque::pop_front(ds::deque::pop_front(d)[1])[1])[1]
+  | assert_true(ds::deque::is_empty(d))
+  | assert_eq(ds::deque::to_array(ds::deque::push_front(d, 9)), [9])
+end
