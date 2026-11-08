@@ -4,7 +4,7 @@
 > This project is currently under active development. APIs and features may change without notice.
 
 > [!NOTE]
-> This module is tuned for the development version of mq, which is not released yet: the heap relies on `slice` cutting an unshared array in place. Released versions give the same results but copy the heap on every `pop`.
+> This module requires mq v0.10.1 or later. The heap relies on `slice` cutting an unshared array in place, which is available from that version; older versions may not work or copy the heap on every `pop`.
 
 Data structures for [mq](https://github.com/harehare/mq): a binary heap, a trie, a union-find, a deque and a sorted list, written as an mq module.
 
